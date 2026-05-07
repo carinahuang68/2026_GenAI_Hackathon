@@ -4,241 +4,146 @@ import logging
 import os
 
 # ============================================
-# AWS Bedrock Configuration
+# AWS Bedrock 設定
 # ============================================
-
 bedrock = boto3.client(
     service_name="bedrock-runtime",
     region_name="us-west-2"
 )
 
-# Amazon Nova Pro Model
+# 使用 Amazon Nova Pro 以獲得最穩定的 JSON 輸出
 MODEL_ID = "amazon.nova-pro-v1:0"
-
-# ============================================
-# Logging Configuration
-# ============================================
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-# ============================================
-# Load Course Dataset
-# ============================================
-
 def load_course_data():
-    """
-    Loads course dataset from sample_courses.json
-    """
-
-    current_dir = os.path.dirname(__file__)
-
-    file_path = os.path.join(
-        current_dir,
-        "..",
-        "data",
-        "sample_courses.json"
-    )
-
-    with open(file_path, "r", encoding="utf-8") as file:
-        return json.load(file)
-
-# ============================================
-# Build Prompt
-# ============================================
+    """載入課程數據 (Person 3 提供的 JSON)"""
+    try:
+        current_dir = os.path.dirname(__file__)
+        file_path = os.path.join(current_dir, "data", "sample_courses.json")
+        
+        if not os.path.exists(file_path):
+            logger.warning(f"找不到檔案: {file_path}")
+            return []
+            
+        with open(file_path, "r", encoding="utf-8") as file:
+            return json.load(file)
+    except Exception as e:
+        logger.error(f"載入數據失敗: {str(e)}")
+        return []
 
 def build_prompt(student_profile, course_data):
-
-    transcript = student_profile.get("transcript", [])
-    interests = student_profile.get("interests", [])
-    learning_style = student_profile.get("learning_style", "")
-    workload_preference = student_profile.get("workload_preference", "")
-    career_goals = student_profile.get("career_goals", "")
-
+    """
+    根據 Hackathon 文件建構 Prompt。
+    確保欄位名稱如 workloadba, career_path, Recommendations 完全對齊規格。
+    """
     return f"""
-You are an AI academic advisor for upper-year university students.
-
-Your task is to recommend the BEST matching courses and professors
-based ONLY on the provided course dataset.
-
-Carefully consider:
-- student's completed courses
-- interests
-- learning style
-- workload preference
-- career goals
+You are an expert AI Academic Advisor for UBC students. Your goal is to provide personalized course matching.
 
 ==================================================
-STUDENT PROFILE
+STUDENT PROFILE (INPUT)
 ==================================================
-
-Transcript:
-{json.dumps(transcript, indent=2)}
-
-Interests:
-{json.dumps(interests, indent=2)}
-
-Learning Style:
-{learning_style}
-
-Workload Preference:
-{workload_preference}
-
-Career Goals:
-{career_goals}
+{json.dumps(student_profile, indent=2)}
 
 ==================================================
-AVAILABLE COURSES
+AVAILABLE COURSES DATA
 ==================================================
-
 {json.dumps(course_data, indent=2)}
 
 ==================================================
 TASK
 ==================================================
+Recommend exactly {student_profile.get('num_courses', 3)} courses.
+Everything must be in English.
 
-Recommend 3 to 5 courses that best fit the student.
-
-For each recommendation include:
-- course code
-- course title
-- recommended professor
-- reason for recommendation
-- expected workload
-- skills gained
-
-Respond ONLY in valid JSON format.
-
-Example:
-
-[
-  {{
-    "course": "CPSC 310",
-    "title": "Software Engineering",
-    "professor": "Dr. Smith",
-    "reason": "Strong fit for software engineering interests and hands-on learning style.",
-    "workload": "High",
-    "skills_gained": [
-      "Software engineering",
-      "Team collaboration",
-      "Full-stack development"
-    ]
-  }}
-]
-
-IMPORTANT:
-- Return ONLY valid JSON
-- Do NOT include markdown
-- Do NOT include explanations
-- Do NOT include extra text
+Your response MUST be a single JSON object. DO NOT include markdown tags.
+Strictly follow this Response Schema:
+{{
+  "success": true,
+  "profile_summary": "2-sentence summary of the student.",
+  "Recommendations": [
+    {{
+      "course": "e.g. CPSC 340",
+      "title": "Course Title",
+      "reason": "Why this matches student interests",
+      "workload": "light, balanced, or heavy",
+      "skills_gained": ["skill1", "skill2"],
+      "warning": "e.g. Math intensive",
+      "professors": [
+        {{
+          "name": "Dr. Name",
+          "professor_style": "Style description",
+          "student_experience": "Feedback summary",
+          "match_scores": {{
+            "learning_style": 0-100,
+            "goals": 0-100,
+            "grades": 0-100,
+            "personality": 0-100,
+            "professor_quality": 0-100
+          }}
+        }}
+      ]
+    }}
+  ]
+}}
 """
 
-# ============================================
-# Generate Recommendations Using Nova Pro
-# ============================================
-
-def generate_recommendations(prompt):
-
-    logger.info("Calling Amazon Nova Pro...")
-
-    response = bedrock.converse(
-        modelId=MODEL_ID,
-        messages=[
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "text": prompt
-                    }
-                ]
-            }
-        ],
-        inferenceConfig={
-            "maxTokens": 1200,
-            "temperature": 0.3
-        }
-    )
-
-    output_text = response["output"]["message"]["content"][0]["text"]
-
-    logger.info(f"Raw model output: {output_text}")
-
-    return extract_json(output_text)
-
-# ============================================
-# Extract JSON Safely
-# ============================================
-
 def extract_json(text):
-
+    """從 AI 回傳文本中提取 JSON"""
     try:
-
-        json_start = text.find("[")
-        json_end = text.rfind("]") + 1
-
-        if json_start == -1 or json_end == 0:
-            raise ValueError("No JSON array found")
-
-        json_string = text[json_start:json_end]
-
-        return json.loads(json_string)
-
+        start = text.find("{")
+        end = text.rfind("}") + 1
+        return json.loads(text[start:end])
     except Exception as e:
-
-        logger.error(f"JSON extraction failed: {str(e)}")
-
-        raise ValueError("Invalid JSON response from Nova Pro")
-
-# ============================================
-# Lambda Handler
-# ============================================
+        logger.error(f"JSON 提取失敗: {str(e)}")
+        raise
 
 def lambda_handler(event, context):
-
     try:
-
-        logger.info(f"Received event: {json.dumps(event)}")
-
-        # ------------------------------------
-        # Parse Request Body
-        # ------------------------------------
-
-        body = json.loads(event["body"])
-
+        logger.info(f"收到事件: {json.dumps(event)}")
+        
+        # 解析 Request Body (對齊文件中的 Request Body 範例)
+        body = json.loads(event.get("body", "{}"))
+        
+        # 建立 Profile (確保對齊文件中的欄位名稱，如 workloadba)
         student_profile = {
+            "major": body.get("major", "Computer Science"),
             "transcript": body.get("transcript", []),
-            "interests": body.get("interests", []),
-            "learning_style": body.get("learning_style", ""),
-            "workload_preference": body.get("workload_preference", ""),
-            "career_goals": body.get("career_goals", "")
+            "courses_enjoyed": body.get("courses_enjoyed", []),
+            "courses_disliked": body.get("courses_disliked", []),
+            "professors_liked": body.get("professors_liked", []),
+            "learning_style": body.get("learning_style", []),
+            "work_style": body.get("work_style", ""),
+            "assessment_preference": body.get("assessment_preference", []),
+            "lecture_style": body.get("lecture_style", ""),
+            "career_path": body.get("career_path", ""), # 文件規格使用 career_path
+            "technical_interests": body.get("technical_interests", []),
+            "breadth_or_depth": body.get("breadth_or_depth", ""),
+            "graduating_soon": body.get("graduating_soon", False),
+            "num_courses": body.get("num_courses", 3),
+            "working_part_time": body.get("working_part_time", False),
+            "time_preference": body.get("time_preference", ""),
+            "mbti": body.get("mbti", ""),
+            "workloadba": body.get("workloadba", body.get("workload_tolerance", "balanced")), # 文件規格使用 workloadba
+            "term_goal": body.get("term_goal", ""),
+            "open_chat": body.get("open_chat", "")
         }
 
-        logger.info(f"Student profile: {student_profile}")
-
-        # ------------------------------------
-        # Load Course Dataset
-        # ------------------------------------
-
         course_data = load_course_data()
-
-        logger.info(f"Loaded {len(course_data)} courses")
-
-        # ------------------------------------
-        # Build Prompt
-        # ------------------------------------
-
         prompt = build_prompt(student_profile, course_data)
 
-        # ------------------------------------
-        # Generate AI Recommendations
-        # ------------------------------------
+        # 呼叫 Amazon Bedrock
+        response = bedrock.converse(
+            modelId=MODEL_ID,
+            messages=[{"role": "user", "content": [{"text": prompt}]}],
+            inferenceConfig={"maxTokens": 2500, "temperature": 0.2}
+        )
 
-        recommendations = generate_recommendations(prompt)
+        output_text = response["output"]["message"]["content"][0]["text"]
+        result = extract_json(output_text)
 
-        # ------------------------------------
-        # Return Response
-        # ------------------------------------
-
+        # 回傳 API Gateway (確保 Recommendations 首字母大寫，完全符合文件)
         return {
             "statusCode": 200,
             "headers": {
@@ -247,48 +152,15 @@ def lambda_handler(event, context):
             },
             "body": json.dumps({
                 "success": True,
-                "recommendations": recommendations
+                "profile_summary": result.get("profile_summary", ""),
+                "Recommendations": result.get("Recommendations", result.get("recommendations", []))
             })
         }
 
     except Exception as e:
-
-        logger.error(f"Lambda error: {str(e)}")
-
+        logger.error(f"錯誤: {str(e)}")
         return {
             "statusCode": 500,
-            "headers": {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
-            },
-            "body": json.dumps({
-                "success": False,
-                "error": str(e)
-            })
+            "headers": {"Access-Control-Allow-Origin": "*"},
+            "body": json.dumps({"success": False, "error": "Internal Server Error"})
         }
-
-# ============================================
-# Local Testing
-# ============================================
-
-if __name__ == "__main__":
-
-    test_event = {
-        "body": json.dumps({
-            "transcript": [
-                "CPSC 110",
-                "CPSC 121"
-            ],
-            "interests": [
-                "AI",
-                "software engineering"
-            ],
-            "learning_style": "hands-on",
-            "workload_preference": "medium",
-            "career_goals": "machine learning engineer"
-        })
-    }
-
-    result = lambda_handler(test_event, None)
-
-    print(json.dumps(result, indent=2))
