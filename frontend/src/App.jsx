@@ -9,29 +9,65 @@ export default function App() {
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
 
-  const handleSubmit = async (formData) => {
+//   const handleSubmit = async (formData) => {
+//     setPage("loading");
+//     setError(null);
+
+//     try {
+//       const res = await fetch(API_URL, {
+//         method: "POST",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify(formData),
+//       });
+
+//       const data = await res.json();
+
+//       if (!data.success) {
+//         throw new Error(data.error || "Something went wrong");
+//       }
+
+//       setResults(data);
+//       setPage("results");
+//     } catch (err) {
+//       setError(err.message);
+//       setPage("form");
+//     }
+//   };
+
+// temporary — remove when backend is ready
+const handleSubmit = async (formData) => {
     setPage("loading");
-    setError(null);
-
-    try {
-      const res = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+    setTimeout(() => {
+      setResults({
+        profile_summary: "You're a 3rd year CS student who prefers project-based learning and aims for ML internships.",
+        recommendations: [
+          {
+            course: "CPSC 340",
+            title: "Machine Learning",
+            reason: "Matches your ML interest and project-based style.",
+            workload: "heavy",
+            overall_match: 88,
+            skills_gained: ["ML", "Python", "Statistics"],
+            warning: "Math intensive",
+            professors: [
+              {
+                name: "Dr. Smith",
+                professor_style: "Structured, detailed feedback",
+                student_experience: "Strong practical assignments",
+                match_scores: { learning_style: 90, goals: 95, grades: 80, personality: 75, professor_match: 88 }
+              },
+              {
+                name: "Dr. Lee",
+                professor_style: "Fast paced, research oriented",
+                student_experience: "Better for grad school",
+                match_scores: { learning_style: 70, goals: 85, grades: 90, personality: 60, professor_match: 72 }
+              }
+            ]
+          }
+        ]
       });
-
-      const data = await res.json();
-
-      if (!data.success) {
-        throw new Error(data.error || "Something went wrong");
-      }
-
-      setResults(data);
       setPage("results");
-    } catch (err) {
-      setError(err.message);
-      setPage("form");
-    }
+    }, 1500);
   };
 
   const handleBack = () => {
