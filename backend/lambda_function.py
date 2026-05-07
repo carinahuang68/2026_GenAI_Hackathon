@@ -12,7 +12,7 @@ bedrock = boto3.client(
 )
 
 # Amazon Nova Pro for high-quality structured JSON
-MODEL_ID = "amazon.nova-pro-v1:0"
+MODEL_ID = "us.anthropic.claude-sonnet-4-6"
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
