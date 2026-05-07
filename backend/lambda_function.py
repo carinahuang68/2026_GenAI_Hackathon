@@ -6,18 +6,13 @@ import os
 # ============================================
 # AWS Bedrock Configuration
 # ============================================
-
 bedrock = boto3.client(
     service_name="bedrock-runtime",
     region_name="us-west-2"
 )
 
-# Amazon Nova Pro Model
+# Amazon Nova Pro for high-quality structured JSON
 MODEL_ID = "amazon.nova-pro-v1:0"
-
-# ============================================
-# Logging Configuration
-# ============================================
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -25,220 +20,147 @@ logger.setLevel(logging.INFO)
 # ============================================
 # Load Course Dataset
 # ============================================
-
 def load_course_data():
     """
-    Loads course dataset from sample_courses.json
+    Loads course dataset from the local 'data' directory.
+    This fulfills the requirement of using curated metadata for the demo.
     """
-
-    current_dir = os.path.dirname(__file__)
-
-    file_path = os.path.join(
-        current_dir,
-        "..",
-        "data",
-        "sample_courses.json"
-    )
-
-    with open(file_path, "r", encoding="utf-8") as file:
-        return json.load(file)
+    try:
+        current_dir = os.path.dirname(__file__)
+        file_path = os.path.join(current_dir, "data", "sample_courses.json")
+        
+        if not os.path.exists(file_path):
+            logger.warning(f"Data file not found at {file_path}. Proceeding with empty list.")
+            return []
+            
+        with open(file_path, "r", encoding="utf-8") as file:
+            return json.load(file)
+    except Exception as e:
+        logger.error(f"Failed to load course data: {str(e)}")
+        return []
 
 # ============================================
-# Build Prompt
+# Build Prompt (Strictly English & Schema Alignment)
 # ============================================
-
 def build_prompt(student_profile, course_data):
-
-    transcript = student_profile.get("transcript", [])
-    interests = student_profile.get("interests", [])
-    learning_style = student_profile.get("learning_style", "")
-    workload_preference = student_profile.get("workload_preference", "")
-    career_goals = student_profile.get("career_goals", "")
-
+    """
+    Constructs the AI advisor prompt. 
+    Forces the model to adhere to the schema provided in the Hackathon document.
+    """
     return f"""
-You are an AI academic advisor for upper-year university students.
-
-Your task is to recommend the BEST matching courses and professors
-based ONLY on the provided course dataset.
-
-Carefully consider:
-- student's completed courses
-- interests
-- learning style
-- workload preference
-- career goals
+You are an expert AI Academic Advisor for UBC. Your task is to analyze the student's profile and recommend courses from the provided dataset.
 
 ==================================================
-STUDENT PROFILE
+STUDENT PROFILE (JSON)
 ==================================================
-
-Transcript:
-{json.dumps(transcript, indent=2)}
-
-Interests:
-{json.dumps(interests, indent=2)}
-
-Learning Style:
-{learning_style}
-
-Workload Preference:
-{workload_preference}
-
-Career Goals:
-{career_goals}
+{json.dumps(student_profile, indent=2)}
 
 ==================================================
-AVAILABLE COURSES
+AVAILABLE COURSES DATA
 ==================================================
-
 {json.dumps(course_data, indent=2)}
 
 ==================================================
-TASK
+REQUIRED OUTPUT FORMAT (JSON ONLY)
 ==================================================
+You must respond with a single, valid JSON object. 
+DO NOT include markdown tags, intro text, or conversational filler.
+Everything must be in English.
 
-Recommend 3 to 5 courses that best fit the student.
-
-For each recommendation include:
-- course code
-- course title
-- recommended professor
-- reason for recommendation
-- expected workload
-- skills gained
-
-Respond ONLY in valid JSON format.
-
-Example:
-
-[
-  {{
-    "course": "CPSC 310",
-    "title": "Software Engineering",
-    "professor": "Dr. Smith",
-    "reason": "Strong fit for software engineering interests and hands-on learning style.",
-    "workload": "High",
-    "skills_gained": [
-      "Software engineering",
-      "Team collaboration",
-      "Full-stack development"
-    ]
-  }}
-]
-
-IMPORTANT:
-- Return ONLY valid JSON
-- Do NOT include markdown
-- Do NOT include explanations
-- Do NOT include extra text
+JSON STRUCTURE:
+{{
+  "profile_summary": "A 2-sentence summary of the student's academic persona.",
+  "Recommendations": [
+    {{
+      "course": "Course Code (e.g., CPSC 340)",
+      "title": "Full Course Title",
+      "reason": "Explain why this matches their interests/goals.",
+      "workload": "heavy, balanced, or light",
+      "skills_gained": ["Skill 1", "Skill 2"],
+      "warning": "Challenge indicators (e.g., 'Math intensive')",
+      "professors": [
+        {{
+          "name": "Professor Name",
+          "professor_style": "Description of teaching style.",
+          "student_experience": "Summary of student feedback.",
+          "match_scores": {{
+            "learning_style": 0-100,
+            "goals": 0-100,
+            "grades": 0-100,
+            "personality": 0-100,
+            "professor_quality": 0-100
+          }}
+        }}
+      ]
+    }}
+  ]
+}}
 """
-
-# ============================================
-# Generate Recommendations Using Nova Pro
-# ============================================
-
-def generate_recommendations(prompt):
-
-    logger.info("Calling Amazon Nova Pro...")
-
-    response = bedrock.converse(
-        modelId=MODEL_ID,
-        messages=[
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "text": prompt
-                    }
-                ]
-            }
-        ],
-        inferenceConfig={
-            "maxTokens": 1200,
-            "temperature": 0.3
-        }
-    )
-
-    output_text = response["output"]["message"]["content"][0]["text"]
-
-    logger.info(f"Raw model output: {output_text}")
-
-    return extract_json(output_text)
 
 # ============================================
 # Extract JSON Safely
 # ============================================
-
 def extract_json(text):
-
+    """Parses JSON from the model response, ignoring any non-JSON text."""
     try:
-
-        json_start = text.find("[")
-        json_end = text.rfind("]") + 1
-
-        if json_start == -1 or json_end == 0:
-            raise ValueError("No JSON array found")
-
-        json_string = text[json_start:json_end]
-
-        return json.loads(json_string)
-
+        start = text.find("{")
+        end = text.rfind("}") + 1
+        if start == -1 or end == 0:
+            raise ValueError("No JSON object found")
+        return json.loads(text[start:end])
     except Exception as e:
-
-        logger.error(f"JSON extraction failed: {str(e)}")
-
-        raise ValueError("Invalid JSON response from Nova Pro")
+        logger.error(f"JSON extraction failed: {str(e)} | Raw Output: {text}")
+        raise
 
 # ============================================
 # Lambda Handler
 # ============================================
-
 def lambda_handler(event, context):
-
     try:
-
-        logger.info(f"Received event: {json.dumps(event)}")
-
-        # ------------------------------------
-        # Parse Request Body
-        # ------------------------------------
-
-        body = json.loads(event["body"])
-
+        logger.info("Processing recommendation request")
+        
+        # 1. Parse Input Body (Mapping to Hackathon Doc Schema)
+        body = json.loads(event.get("body", "{}"))
+        
         student_profile = {
+            "major": body.get("major"),
             "transcript": body.get("transcript", []),
-            "interests": body.get("interests", []),
-            "learning_style": body.get("learning_style", ""),
-            "workload_preference": body.get("workload_preference", ""),
-            "career_goals": body.get("career_goals", "")
+            "courses_enjoyed": body.get("courses_enjoyed", []),
+            "courses_disliked": body.get("courses_disliked", []),
+            "professors_liked": body.get("professors_liked", []),
+            "learning_style": body.get("learning_style", []),
+            "work_style": body.get("work_style", ""),
+            "assessment_preference": body.get("assessment_preference", []),
+            "lecture_style": body.get("lecture_style", ""),
+            "career_path": body.get("career_path", ""),
+            "technical_interests": body.get("technical_interests", []),
+            "breadth_or_depth": body.get("breadth_or_depth", ""),
+            "graduating_soon": body.get("graduating_soon", False),
+            "num_courses": body.get("num_courses", 3),
+            "working_part_time": body.get("working_part_time", False),
+            "time_preference": body.get("time_preference", ""),
+            "mbti": body.get("mbti", ""),
+            "workloadba": body.get("workloadba", "balanced"),
+            "term_goal": body.get("term_goal", ""),
+            "open_chat": body.get("open_chat", "")
         }
 
-        logger.info(f"Student profile: {student_profile}")
-
-        # ------------------------------------
-        # Load Course Dataset
-        # ------------------------------------
-
+        # 2. Load Metadata
         course_data = load_course_data()
-
-        logger.info(f"Loaded {len(course_data)} courses")
-
-        # ------------------------------------
-        # Build Prompt
-        # ------------------------------------
-
+        
+        # 3. Call AI
         prompt = build_prompt(student_profile, course_data)
-
-        # ------------------------------------
-        # Generate AI Recommendations
-        # ------------------------------------
-
-        recommendations = generate_recommendations(prompt)
-
-        # ------------------------------------
-        # Return Response
-        # ------------------------------------
-
+        
+        response = bedrock.converse(
+            modelId=MODEL_ID,
+            messages=[{"role": "user", "content": [{"text": prompt}]}],
+            inferenceConfig={"maxTokens": 2500, "temperature": 0.2}
+        )
+        
+        output_text = response["output"]["message"]["content"][0]["text"]
+        result = extract_json(output_text)
+        
+        # 4. Final Response (Aligned with success: true schema)
         return {
             "statusCode": 200,
             "headers": {
@@ -247,14 +169,13 @@ def lambda_handler(event, context):
             },
             "body": json.dumps({
                 "success": True,
-                "recommendations": recommendations
+                "profile_summary": result.get("profile_summary", ""),
+                "Recommendations": result.get("Recommendations", result.get("recommendations", []))
             })
         }
 
     except Exception as e:
-
-        logger.error(f"Lambda error: {str(e)}")
-
+        logger.error(f"Execution failed: {str(e)}")
         return {
             "statusCode": 500,
             "headers": {
@@ -263,32 +184,6 @@ def lambda_handler(event, context):
             },
             "body": json.dumps({
                 "success": False,
-                "error": str(e)
+                "error": "Internal Server Error"
             })
         }
-
-# ============================================
-# Local Testing
-# ============================================
-
-if __name__ == "__main__":
-
-    test_event = {
-        "body": json.dumps({
-            "transcript": [
-                "CPSC 110",
-                "CPSC 121"
-            ],
-            "interests": [
-                "AI",
-                "software engineering"
-            ],
-            "learning_style": "hands-on",
-            "workload_preference": "medium",
-            "career_goals": "machine learning engineer"
-        })
-    }
-
-    result = lambda_handler(test_event, None)
-
-    print(json.dumps(result, indent=2))
