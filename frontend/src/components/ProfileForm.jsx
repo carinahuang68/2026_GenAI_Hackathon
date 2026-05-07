@@ -3,6 +3,12 @@ import { useState } from "react";
 const LEARNING_STYLES = ["project-based", "applied", "theory", "lab"];
 const ASSESSMENTS = ["exams", "projects", "essays", "assignments"];
 const INTERESTS = ["AI", "systems", "HCI", "security", "databases", "theory", "networks", "graphics"];
+const MBTI_TYPES = [
+  "INTJ","INTP","ENTJ","ENTP",
+  "INFJ","INFP","ENFJ","ENFP",
+  "ISTJ","ISFJ","ESTJ","ESFJ",
+  "ISTP","ISFP","ESTP","ESFP",
+];
 
 function TagInput({ placeholder, value, onChange }) {
   const [input, setInput] = useState("");
@@ -224,6 +230,7 @@ export default function ProfileForm({ onSubmit }) {
     num_courses: 3,
     working_part_time: false,
     time_preference: "",
+    mbti: "",
     workload_tolerance: "",
     term_goal: "",
     open_chat: "",
@@ -333,7 +340,7 @@ export default function ProfileForm({ onSubmit }) {
         <Toggle label="Graduating soon?" value={form.graduating_soon} onChange={set("graduating_soon")} />
       </Section>
 
-      <Section title="Schedule & Workload">
+      <Section title="Schedule">
         <Field label={`Number of courses: ${form.num_courses}`}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ fontSize: 12, color: "#888" }}>1</span>
@@ -361,6 +368,21 @@ export default function ProfileForm({ onSubmit }) {
               ]}
             />
           </Field>
+          <div style={{ display: "flex", alignItems: "center", paddingTop: 20 }}>
+            <Toggle label="Working part-time?" value={form.working_part_time} onChange={set("working_part_time")} />
+          </div>
+        </div>
+      </Section>
+
+      <Section title="Personality">
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <Field label="MBTI type">
+            <Select
+              value={form.mbti}
+              onChange={set("mbti")}
+              options={MBTI_TYPES.map((t) => ({ value: t, label: t }))}
+            />
+          </Field>
           <Field label="Workload tolerance">
             <Select
               value={form.workload_tolerance}
@@ -373,20 +395,17 @@ export default function ProfileForm({ onSubmit }) {
             />
           </Field>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: "1rem" }}>
-          <Toggle label="Working part-time?" value={form.working_part_time} onChange={set("working_part_time")} />
-          <Field label="Term goal" style={{ marginBottom: 0 }}>
-            <Select
-              value={form.term_goal}
-              onChange={set("term_goal")}
-              options={[
-                { value: "chill", label: "Chill" },
-                { value: "balanced", label: "Balanced" },
-                { value: "challenging", label: "Challenging" },
-              ]}
-            />
-          </Field>
-        </div>
+        <Field label="Term goal">
+          <Select
+            value={form.term_goal}
+            onChange={set("term_goal")}
+            options={[
+              { value: "chill", label: "Chill" },
+              { value: "balanced", label: "Balanced" },
+              { value: "challenging", label: "Challenging" },
+            ]}
+          />
+        </Field>
       </Section>
 
       <Section title="Anything else?">
