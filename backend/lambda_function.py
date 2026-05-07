@@ -4,45 +4,54 @@ import logging
 import os
 
 # ============================================
-# AWS Bedrock 設定
+# AWS Bedrock Configuration
 # ============================================
 bedrock = boto3.client(
     service_name="bedrock-runtime",
     region_name="us-west-2"
 )
 
-# 使用 Amazon Nova Pro 以獲得最穩定的 JSON 輸出
+# Amazon Nova Pro for high-quality structured JSON
 MODEL_ID = "amazon.nova-pro-v1:0"
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+# ============================================
+# Load Course Dataset
+# ============================================
 def load_course_data():
-    """載入課程數據 (Person 3 提供的 JSON)"""
+    """
+    Loads course dataset from the local 'data' directory.
+    This fulfills the requirement of using curated metadata for the demo.
+    """
     try:
         current_dir = os.path.dirname(__file__)
         file_path = os.path.join(current_dir, "data", "sample_courses.json")
         
         if not os.path.exists(file_path):
-            logger.warning(f"找不到檔案: {file_path}")
+            logger.warning(f"Data file not found at {file_path}. Proceeding with empty list.")
             return []
             
         with open(file_path, "r", encoding="utf-8") as file:
             return json.load(file)
     except Exception as e:
-        logger.error(f"載入數據失敗: {str(e)}")
+        logger.error(f"Failed to load course data: {str(e)}")
         return []
 
+# ============================================
+# Build Prompt (Strictly English & Schema Alignment)
+# ============================================
 def build_prompt(student_profile, course_data):
     """
-    根據 Hackathon 文件建構 Prompt。
-    確保欄位名稱如 workloadba, career_path, Recommendations 完全對齊規格。
+    Constructs the AI advisor prompt. 
+    Forces the model to adhere to the schema provided in the Hackathon document.
     """
     return f"""
-You are an expert AI Academic Advisor for UBC students. Your goal is to provide personalized course matching.
+You are an expert AI Academic Advisor for UBC. Your task is to analyze the student's profile and recommend courses from the provided dataset.
 
 ==================================================
-STUDENT PROFILE (INPUT)
+STUDENT PROFILE (JSON)
 ==================================================
 {json.dumps(student_profile, indent=2)}
 
@@ -52,29 +61,28 @@ AVAILABLE COURSES DATA
 {json.dumps(course_data, indent=2)}
 
 ==================================================
-TASK
+REQUIRED OUTPUT FORMAT (JSON ONLY)
 ==================================================
-Recommend exactly {student_profile.get('num_courses', 3)} courses.
+You must respond with a single, valid JSON object. 
+DO NOT include markdown tags, intro text, or conversational filler.
+Everything must be in English.
 
-Your response MUST be a single JSON object. DO NOT include markdown tags.
-Strictly follow this Response Schema:
+JSON STRUCTURE:
 {{
-  "success": true,
-  "profile_summary": "2-sentence summary of the student.",
+  "profile_summary": "A 2-sentence summary of the student's academic persona.",
   "Recommendations": [
     {{
-      "course": "e.g. CPSC 340",
-      "title": "Course Title",
-      "reason": "Why this matches student interests",
-      "workload": "light, balanced, or heavy",
-      "skills_gained": ["skill1", "skill2"],
-      "warning": "e.g. Math intensive",
-      "overall_match": "iteger 0-100",
+      "course": "Course Code (e.g., CPSC 340)",
+      "title": "Full Course Title",
+      "reason": "Explain why this matches their interests/goals.",
+      "workload": "heavy, balanced, or light",
+      "skills_gained": ["Skill 1", "Skill 2"],
+      "warning": "Challenge indicators (e.g., 'Math intensive')",
       "professors": [
         {{
-          "name": "Dr. Name",
-          "professor_style": "Style description",
-          "student_experience": "Feedback summary",
+          "name": "Professor Name",
+          "professor_style": "Description of teaching style.",
+          "student_experience": "Summary of student feedback.",
           "match_scores": {{
             "learning_style": 0-100,
             "goals": 0-100,
@@ -89,26 +97,33 @@ Strictly follow this Response Schema:
 }}
 """
 
+# ============================================
+# Extract JSON Safely
+# ============================================
 def extract_json(text):
-    """從 AI 回傳文本中提取 JSON"""
+    """Parses JSON from the model response, ignoring any non-JSON text."""
     try:
         start = text.find("{")
         end = text.rfind("}") + 1
+        if start == -1 or end == 0:
+            raise ValueError("No JSON object found")
         return json.loads(text[start:end])
     except Exception as e:
-        logger.error(f"JSON 提取失敗: {str(e)}")
+        logger.error(f"JSON extraction failed: {str(e)} | Raw Output: {text}")
         raise
 
+# ============================================
+# Lambda Handler
+# ============================================
 def lambda_handler(event, context):
     try:
-        logger.info(f"收到事件: {json.dumps(event)}")
+        logger.info("Processing recommendation request")
         
-        # 解析 Request Body (對齊文件中的 Request Body 範例)
+        # 1. Parse Input Body (Mapping to Hackathon Doc Schema)
         body = json.loads(event.get("body", "{}"))
         
-        # 建立 Profile (確保對齊文件中的欄位名稱，如 workloadba)
         student_profile = {
-            "major": body.get("major", "Computer Science"),
+            "major": body.get("major"),
             "transcript": body.get("transcript", []),
             "courses_enjoyed": body.get("courses_enjoyed", []),
             "courses_disliked": body.get("courses_disliked", []),
@@ -117,7 +132,7 @@ def lambda_handler(event, context):
             "work_style": body.get("work_style", ""),
             "assessment_preference": body.get("assessment_preference", []),
             "lecture_style": body.get("lecture_style", ""),
-            "career_path": body.get("career_path", ""), # 文件規格使用 career_path
+            "career_path": body.get("career_path", ""),
             "technical_interests": body.get("technical_interests", []),
             "breadth_or_depth": body.get("breadth_or_depth", ""),
             "graduating_soon": body.get("graduating_soon", False),
@@ -125,25 +140,27 @@ def lambda_handler(event, context):
             "working_part_time": body.get("working_part_time", False),
             "time_preference": body.get("time_preference", ""),
             "mbti": body.get("mbti", ""),
-            "workloadba": body.get("workloadba", body.get("workload_tolerance", "balanced")), # 文件規格使用 workloadba
+            "workloadba": body.get("workloadba", "balanced"),
             "term_goal": body.get("term_goal", ""),
             "open_chat": body.get("open_chat", "")
         }
 
+        # 2. Load Metadata
         course_data = load_course_data()
+        
+        # 3. Call AI
         prompt = build_prompt(student_profile, course_data)
-
-        # 呼叫 Amazon Bedrock
+        
         response = bedrock.converse(
             modelId=MODEL_ID,
             messages=[{"role": "user", "content": [{"text": prompt}]}],
             inferenceConfig={"maxTokens": 2500, "temperature": 0.2}
         )
-
+        
         output_text = response["output"]["message"]["content"][0]["text"]
         result = extract_json(output_text)
-
-        # 回傳 API Gateway (確保 Recommendations 首字母大寫，完全符合文件)
+        
+        # 4. Final Response (Aligned with success: true schema)
         return {
             "statusCode": 200,
             "headers": {
@@ -158,9 +175,15 @@ def lambda_handler(event, context):
         }
 
     except Exception as e:
-        logger.error(f"錯誤: {str(e)}")
+        logger.error(f"Execution failed: {str(e)}")
         return {
             "statusCode": 500,
-            "headers": {"Access-Control-Allow-Origin": "*"},
-            "body": json.dumps({"success": False, "error": "Internal Server Error"})
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            },
+            "body": json.dumps({
+                "success": False,
+                "error": "Internal Server Error"
+            })
         }
