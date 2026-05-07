@@ -55,7 +55,6 @@ AVAILABLE COURSES DATA
 TASK
 ==================================================
 Recommend exactly {student_profile.get('num_courses', 3)} courses.
-Everything must be in English.
 
 Your response MUST be a single JSON object. DO NOT include markdown tags.
 Strictly follow this Response Schema:
@@ -70,6 +69,7 @@ Strictly follow this Response Schema:
       "workload": "light, balanced, or heavy",
       "skills_gained": ["skill1", "skill2"],
       "warning": "e.g. Math intensive",
+      "overall_match": "iteger 0-100",
       "professors": [
         {{
           "name": "Dr. Name",
