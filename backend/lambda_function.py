@@ -12,22 +12,23 @@ bedrock = boto3.client(
     region_name="us-west-2"
 )
 
-MODEL_ID = "anthropic.claude-3-sonnet-20240229-v1:0"
+# Amazon Nova Pro Model
+MODEL_ID = "amazon.nova-pro-v1:0"
 
 # ============================================
-# Logging
+# Logging Configuration
 # ============================================
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 # ============================================
-# Load Course Data
+# Load Course Dataset
 # ============================================
 
 def load_course_data():
     """
-    Loads sample course data from JSON file.
+    Loads course dataset from sample_courses.json
     """
 
     current_dir = os.path.dirname(__file__)
@@ -96,7 +97,7 @@ AVAILABLE COURSES
 TASK
 ==================================================
 
-Recommend 3-5 courses that best fit the student.
+Recommend 3 to 5 courses that best fit the student.
 
 For each recommendation include:
 - course code
@@ -125,15 +126,20 @@ Example:
   }}
 ]
 
-DO NOT include markdown.
-DO NOT include explanations outside JSON.
+IMPORTANT:
+- Return ONLY valid JSON
+- Do NOT include markdown
+- Do NOT include explanations
+- Do NOT include extra text
 """
 
 # ============================================
-# Call Bedrock
+# Generate Recommendations Using Nova Pro
 # ============================================
 
 def generate_recommendations(prompt):
+
+    logger.info("Calling Amazon Nova Pro...")
 
     response = bedrock.converse(
         modelId=MODEL_ID,
@@ -148,8 +154,8 @@ def generate_recommendations(prompt):
             }
         ],
         inferenceConfig={
-            "maxTokens": 1500,
-            "temperature": 0.4
+            "maxTokens": 1200,
+            "temperature": 0.3
         }
     )
 
@@ -170,15 +176,18 @@ def extract_json(text):
         json_start = text.find("[")
         json_end = text.rfind("]") + 1
 
+        if json_start == -1 or json_end == 0:
+            raise ValueError("No JSON array found")
+
         json_string = text[json_start:json_end]
 
         return json.loads(json_string)
 
     except Exception as e:
 
-        logger.error(f"JSON parsing failed: {str(e)}")
+        logger.error(f"JSON extraction failed: {str(e)}")
 
-        raise ValueError("Invalid JSON response from model")
+        raise ValueError("Invalid JSON response from Nova Pro")
 
 # ============================================
 # Lambda Handler
@@ -191,7 +200,7 @@ def lambda_handler(event, context):
         logger.info(f"Received event: {json.dumps(event)}")
 
         # ------------------------------------
-        # Parse frontend request
+        # Parse Request Body
         # ------------------------------------
 
         body = json.loads(event["body"])
@@ -204,26 +213,30 @@ def lambda_handler(event, context):
             "career_goals": body.get("career_goals", "")
         }
 
+        logger.info(f"Student profile: {student_profile}")
+
         # ------------------------------------
-        # Load course dataset
+        # Load Course Dataset
         # ------------------------------------
 
         course_data = load_course_data()
 
+        logger.info(f"Loaded {len(course_data)} courses")
+
         # ------------------------------------
-        # Build AI prompt
+        # Build Prompt
         # ------------------------------------
 
         prompt = build_prompt(student_profile, course_data)
 
         # ------------------------------------
-        # Generate recommendations
+        # Generate AI Recommendations
         # ------------------------------------
 
         recommendations = generate_recommendations(prompt)
 
         # ------------------------------------
-        # Return response
+        # Return Response
         # ------------------------------------
 
         return {
