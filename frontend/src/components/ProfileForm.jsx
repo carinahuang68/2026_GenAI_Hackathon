@@ -215,7 +215,7 @@ const Select = ({ id, value, onChange, options }) => (
 export default function ProfileForm({ onSubmit }) {
   const [form, setForm] = useState({
     major: "",
-    transcript: [],
+    transcript_file: null,
     courses_enjoyed: [],
     courses_disliked: [],
     professors_liked: [],
@@ -238,8 +238,24 @@ export default function ProfileForm({ onSubmit }) {
 
   const set = (key) => (val) => setForm((f) => ({ ...f, [key]: val }));
 
+  const handleTranscriptUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) set("transcript_file")(file);
+  };
+
   const handleSubmit = () => {
-    if (onSubmit) onSubmit(form);
+    if (!onSubmit) return;
+    const formData = new FormData();
+    Object.entries(form).forEach(([key, val]) => {
+      if (key === "transcript_file") {
+        if (val) formData.append("transcript_file", val);
+      } else if (Array.isArray(val)) {
+        formData.append(key, JSON.stringify(val));
+      } else {
+        formData.append(key, val);
+      }
+    });
+    onSubmit(formData);
   };
 
   return (
@@ -256,8 +272,41 @@ export default function ProfileForm({ onSubmit }) {
               style={{ width: "100%", padding: "8px 10px", fontSize: 13, border: "0.5px solid #ccc", borderRadius: 8 }}
             />
           </Field>
-          <Field label="Courses taken (press Enter to add)">
-            <TagInput placeholder="e.g. CPSC 110" value={form.transcript} onChange={set("transcript")} />
+          <Field label="UBC unofficial transcript (PDF)">
+            <div
+              style={{
+                border: form.transcript_file ? "1px solid #1d4ed8" : "1.5px dashed #ccc",
+                borderRadius: 8,
+                padding: "10px 12px",
+                background: form.transcript_file ? "#eff6ff" : "white",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                minHeight: 38,
+              }}
+              onClick={() => document.getElementById("transcript-upload").click()}
+            >
+              <span style={{ fontSize: 16 }}>📄</span>
+              <span style={{ fontSize: 12, color: form.transcript_file ? "#1d4ed8" : "#aaa", flex: 1 }}>
+                {form.transcript_file ? form.transcript_file.name : "Click to upload PDF"}
+              </span>
+              {form.transcript_file && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); set("transcript_file")(null); document.getElementById("transcript-upload").value = ""; }}
+                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "#888" }}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            <input
+              id="transcript-upload"
+              type="file"
+              accept=".pdf"
+              onChange={handleTranscriptUpload}
+              style={{ display: "none" }}
+            />
           </Field>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
