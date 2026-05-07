@@ -1,6 +1,7 @@
 import { useState } from "react";
 import ProfileForm from "./components/ProfileForm";
 import RecommendationCard from "./components/CourseRecommendationCard";
+import RecommendationTable from "./components/RecommendationTable";
 
 const API_URL = "https://YOUR_API_URL/recommend"; // swap this with Person 2's endpoint
 
@@ -34,7 +35,6 @@ export default function App() {
 //     }
 //   };
 
-// temporary — remove when backend is ready
 const handleSubmit = async (formData) => {
     setPage("loading");
     setTimeout(() => {
@@ -208,6 +208,11 @@ const handleSubmit = async (formData) => {
           >
             {results.recommendations?.length} courses recommended for you
           </div>
+
+          {/* Summary table */}
+          {results.recommendations && (
+            <RecommendationTable recommendations={results.recommendations} />
+          )}
 
           {/* Recommendation cards */}
           {results.recommendations?.map((rec, i) => (
