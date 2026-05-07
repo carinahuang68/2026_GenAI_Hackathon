@@ -1,6 +1,6 @@
 import { useState } from "react";
 import ProfileForm from "./components/ProfileForm";
-import RecommendationCard from "./components/RecommendationCard";
+import RecommendationCard from "./components/CourseRecommendationCard";
 
 const API_URL = "https://YOUR_API_URL/recommend"; // swap this with Person 2's endpoint
 
