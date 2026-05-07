@@ -1,11 +1,245 @@
 [
-  {
-    "course_code": "CPSC 310",
-    "title": "Introduction to Software Engineering",
-    "description": "Specification, design, validation, evolution and construction of modern software systems, within the context of socially and professionally relevant domains such as ethics, intellectual property, and information security.",
-    "professors": ["Katharine Kerr", "Kyle Chin", "Nicholas Bradley"],
-    "tags": ["abc", "xyz"],
-    "workload": "balanced",
-    "prerequisites": ["CPSC 213", "CPSC 221"]
-  }
-]
+    {
+      "course_code": "CPSC 303",
+      "title": "Numerical Approximation and Discretization",
+      "description": "Numerical techniques for mathematical processes involving discretization, including interpolation, splines, least squares fitting, numerical differentiation and integration, and introductory ODE methods.",
+      "professors": ["Chen Greif"],
+      "tags": ["numerical methods", "math-heavy", "theoretical", "computation"],
+      "workload": "heavy",
+      "prerequisites": ["CPSC 103 or CPSC 110 or CPEN 221", "MATH 101/105/121", "MATH 152/221/223"]
+    },
+    {
+      "course_code": "CPSC 304",
+      "title": "Introduction to Relational Databases",
+      "description": "Overview of database systems including ER modeling, relational design, normalization, SQL, and data warehouse concepts.",
+      "professors": ["Ivan Beschastnikh", "Jianhao Cao"],
+      "tags": ["databases", "sql", "data systems", "structured data"],
+      "workload": "balanced",
+      "prerequisites": ["CPSC 221 or DSCI 221"]
+    },
+    {
+      "course_code": "CPSC 310",
+      "title": "Introduction to Software Engineering",
+      "description": "Design, construction, validation, and evolution of modern software systems with emphasis on real-world development practices and ethical considerations.",
+      "professors": ["Nicholas Bradley"],
+      "tags": ["software engineering", "team projects", "industry-focused", "systems design"],
+      "workload": "heavy",
+      "prerequisites": ["CPSC 213", "CPSC 221"]
+    },
+    {
+      "course_code": "CPSC 313",
+      "title": "Computer Hardware and Operating Systems",
+      "description": "Covers instruction sets, pipelining, caching, virtual memory, and operating system fundamentals.",
+      "professors": ["Patrice Belleville"],
+      "tags": ["systems", "OS", "hardware", "low-level programming"],
+      "workload": "heavy",
+      "prerequisites": ["CPSC 213", "CPSC 221 or DSCI 221"]
+    },
+    {
+      "course_code": "CPSC 314",
+      "title": "Computer Graphics",
+      "description": "Introduction to graphics including transformations, rendering, shading, lighting, and animation.",
+      "professors": ["Xingguang Yan"],
+      "tags": ["graphics", "visual computing", "math-heavy", "creative coding"],
+      "workload": "heavy",
+      "prerequisites": ["CPSC 221"]
+    },
+    {
+      "course_code": "CPSC 317",
+      "title": "Introduction to Computer Networking",
+      "description": "Basic networking concepts including protocols, routing, and distributed application design.",
+      "professors": ["Maryam Raiyat Aliabadi", "Ibtissem Bouacheria", "Norman Hutchinson"],
+      "tags": ["networking", "distributed systems", "internet protocols"],
+      "workload": "balanced",
+      "prerequisites": ["CPSC 213", "CPSC 221 or DSCI 221"]
+    },
+    {
+      "course_code": "CPSC 319",
+      "title": "Software Engineering Project",
+      "description": "Team-based design and implementation of a large software system.",
+      "professors": ["Parsa Rajabi"],
+      "tags": ["capstone", "team project", "software engineering", "practical"],
+      "workload": "heavy",
+      "prerequisites": ["CPSC 310"]
+    },
+    {
+      "course_code": "CPSC 320",
+      "title": "Intermediate Algorithm Design and Analysis",
+      "description": "Study of algorithms including graph algorithms, data structures, and computational complexity.",
+      "professors": ["Steven Wolfman", "Gautam Luhana"],
+      "tags": ["algorithms", "theoretical", "problem solving", "math-heavy"],
+      "workload": "heavy",
+      "prerequisites": ["CPSC 221 or DSCI 221", "math/stat upper-level course"]
+    },
+    {
+      "course_code": "CPSC 322",
+      "title": "Introduction to Artificial Intelligence",
+      "description": "Problem solving, planning, search algorithms, and applications of AI.",
+      "professors": ["Giuseppe Carenini"],
+      "tags": ["AI", "search algorithms", "problem solving", "foundations"],
+      "workload": "balanced",
+      "prerequisites": ["CPSC 221 or DSCI 221"]
+    },
+    {
+      "course_code": "CPSC 330",
+      "title": "Applied Machine Learning",
+      "description": "Practical machine learning including data cleaning, feature engineering, supervised and unsupervised learning.",
+      "professors": ["Giulia Toti", "Firas Moosvi", "Mehrdad Oveisi-Fordoei"],
+      "tags": ["machine learning", "applied", "data science", "practical"],
+      "workload": "heavy",
+      "prerequisites": ["CPSC 210/221 or equivalent math background"]
+    },
+    {
+      "course_code": "CPSC 340",
+      "title": "Machine Learning and Data Mining",
+      "description": "Advanced ML including clustering, regression, dimensionality reduction, and probabilistic models.",
+      "professors": ["Mi Jung Park", "Frank Donald Wood"],
+      "tags": ["machine learning", "theoretical", "data mining", "math-heavy"],
+      "workload": "heavy",
+      "prerequisites": ["CPSC 221", "MATH 200+ or STAT background"]
+    },
+    {
+      "course_code": "CPSC 344",
+      "title": "Human Computer Interaction Methods",
+      "description": "Introduction to user interface design, task analysis, and evaluation methods in HCI.",
+      "professors": ["Teerapaun Tanprasert"],
+      "tags": ["HCI", "design", "user experience", "human-centered"],
+      "workload": "balanced",
+      "prerequisites": ["CPSC 210 or CPEN 221"]
+    },
+    {
+      "course_code": "CPSC 404",
+      "title": "Advanced Relational Databases",
+      "description": "Advanced database topics including indexing, query optimization, transaction processing, concurrency control, and recovery systems.",
+      "professors": ["Edwin Max Knor", "Laks Lakshmanan"],
+      "tags": ["databases", "sql optimization", "systems", "backend engineering"],
+      "workload": "heavy",
+      "prerequisites": ["CPSC 304", "CPSC 213 or CPSC 261 or CPEN 212"]
+    },
+    {
+      "course_code": "CPSC 406",
+      "title": "Computational Optimization",
+      "description": "Algorithms for optimization including linear, nonlinear, network, and integer optimization with duality and sensitivity analysis.",
+      "professors": ["Susanne Bradley"],
+      "tags": ["optimization", "algorithms", "math-heavy", "operations research"],
+      "workload": "heavy",
+      "prerequisites": ["CPSC 302 or CPSC 303 or MATH 307"]
+    },
+    {
+      "course_code": "CPSC 410",
+      "title": "Advanced Software Engineering",
+      "description": "Development of large-scale software systems including multi-version systems, design patterns, and validation techniques.",
+      "professors": ["Caroline Lemieux"],
+      "tags": ["software engineering", "systems design", "large-scale systems", "team projects"],
+      "workload": "heavy",
+      "prerequisites": ["CPSC 310"]
+    },
+    {
+      "course_code": "CPSC 411",
+      "title": "Introduction to Compiler Construction",
+      "description": "Design and implementation of compilers including lexical analysis, parsing, type checking, and code generation.",
+      "professors": ["William Bowman"],
+      "tags": ["compilers", "systems", "low-level programming", "theoretical"],
+      "workload": "heavy",
+      "prerequisites": ["CPSC 213", "CPSC 221", "CPSC 311"]
+    },
+    {
+      "course_code": "CPSC 416",
+      "title": "Distributed Systems",
+      "description": "Principles of distributed computing including communication, fault tolerance, naming, and distributed file systems.",
+      "professors": ["William Mason"],
+      "tags": ["distributed systems", "networking", "systems", "cloud computing foundations"],
+      "workload": "heavy",
+      "prerequisites": ["CPSC 313 or CPEN 331", "CPSC 317 or ELEC 331"]
+    },
+    {
+      "course_code": "CPSC 418",
+      "title": "Parallel Computation",
+      "description": "Parallel algorithms and architectures including shared memory, message passing, and performance analysis.",
+      "professors": ["Susanne Bradley", "Mark Greenstreet"],
+      "tags": ["parallel computing", "algorithms", "systems", "high-performance computing"],
+      "workload": "heavy",
+      "prerequisites": ["CPSC 320", "CPSC 261 or CPSC 313 or CPEN 212"]
+    },
+    {
+      "course_code": "CPSC 420",
+      "title": "Advanced Algorithms Design and Analysis",
+      "description": "Advanced algorithm design including graph algorithms, approximation algorithms, and complexity theory.",
+      "professors": ["Frederick Shepherd"],
+      "tags": ["algorithms", "theoretical", "math-heavy", "problem solving"],
+      "workload": "heavy",
+      "prerequisites": ["CPSC 320"]
+    },
+    {
+      "course_code": "CPSC 422",
+      "title": "Intelligent Systems",
+      "description": "Design of intelligent systems including natural language processing, expert systems, and symbolic AI.",
+      "professors": ["Jordon Johnson"],
+      "tags": ["AI", "intelligent systems", "symbolic AI", "knowledge representation"],
+      "workload": "balanced",
+      "prerequisites": ["CPSC 322"]
+    },
+    {
+      "course_code": "CPSC 425",
+      "title": "Computer Vision",
+      "description": "Image processing and computer vision including recognition, stereo vision, motion analysis, and 3D reconstruction.",
+      "professors": ["Leonid Sigal", "Adrian Lindsay"],
+      "tags": ["computer vision", "AI", "image processing", "machine learning applications"],
+      "workload": "heavy",
+      "prerequisites": ["CPSC 221", "math/stat background"]
+    },
+    {
+      "course_code": "CPSC 426",
+      "title": "Computer Animation",
+      "description": "Animation techniques including keyframing, motion capture, physics-based animation, and character simulation.",
+      "professors": ["Dinesh Pai"],
+      "tags": ["graphics", "animation", "simulation", "creative computing"],
+      "workload": "balanced",
+      "prerequisites": ["CPSC 314"]
+    },
+    {
+      "course_code": "CPSC 427",
+      "title": "Video Game Programming",
+      "description": "Game development including rendering, AI, animation, and real-time interactive systems.",
+      "professors": ["Chris Kerslake"],
+      "tags": ["game development", "graphics", "real-time systems", "interactive computing"],
+      "workload": "balanced",
+      "prerequisites": ["CPSC 314"]
+    },
+    {
+      "course_code": "CPSC 440",
+      "title": "Advanced Machine Learning",
+      "description": "Deep learning, probabilistic models, graphical models, and advanced inference techniques.",
+      "professors": ["Danica Sutherlan"],
+      "tags": ["machine learning", "deep learning", "AI", "probabilistic models"],
+      "workload": "very heavy",
+      "prerequisites": ["CPSC 340"]
+    },
+    {
+      "course_code": "CPSC 444",
+      "title": "Advanced Methods for Human Computer Interaction",
+      "description": "Advanced HCI methods including user modeling, experimental design, and field studies.",
+      "professors": ["Laura Cang"],
+      "tags": ["HCI", "user experience", "design research", "human-centered computing"],
+      "workload": "balanced",
+      "prerequisites": ["CPSC 344"]
+    },
+    {
+      "course_code": "CPSC 445",
+      "title": "Algorithms in Bioinformatics",
+      "description": "Computational biology algorithms including sequence alignment, phylogenetics, and gene analysis.",
+      "professors": ["Jiarui Ding"],
+      "tags": ["bioinformatics", "algorithms", "computational biology", "data science"],
+      "workload": "heavy",
+      "prerequisites": ["CPSC 320"]
+    },
+    {
+      "course_code": "CPSC 447",
+      "title": "Introduction to Visualization",
+      "description": "Design and implementation of data visualization systems for analytical reasoning and communication.",
+      "professors": ["Tamara Munzner"],
+      "tags": ["data visualization", "HCI", "design", "data science"],
+      "workload": "balanced",
+      "prerequisites": ["CPSC 310 or CPEN 321"]
+    }
+  ]
