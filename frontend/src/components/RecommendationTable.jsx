@@ -93,30 +93,34 @@ export default function RecommendationTable({ recommendations }) {
   
                     {/* Match */}
                     <td style={{ padding: "10px 12px", verticalAlign: "middle" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <div
-                          style={{
-                            width: 48,
-                            height: 5,
-                            background: "#f0f0f0",
-                            borderRadius: 999,
-                            overflow: "hidden",
-                            flexShrink: 0,
-                          }}
-                        >
+                      {rec.overall_match != null ? (
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                           <div
                             style={{
+                              width: 48,
                               height: 5,
-                              width: `${rec.overall_match ?? 0}%`,
-                              background: matchColor,
+                              background: "#f0f0f0",
                               borderRadius: 999,
+                              overflow: "hidden",
+                              flexShrink: 0,
                             }}
-                          />
+                          >
+                            <div
+                              style={{
+                                height: 5,
+                                width: `${rec.overall_match}%`,
+                                background: matchColor,
+                                borderRadius: 999,
+                              }}
+                            />
+                          </div>
+                          <span style={{ fontSize: 12, fontWeight: 500, color: "#111", whiteSpace: "nowrap" }}>
+                            {rec.overall_match}%
+                          </span>
                         </div>
-                        <span style={{ fontSize: 12, fontWeight: 500, color: "#111", whiteSpace: "nowrap" }}>
-                          {rec.overall_match ?? "—"}%
-                        </span>
-                      </div>
+                      ) : (
+                        <span style={{ color: "#bbb" }}>—</span>
+                      )}
                     </td>
   
                     {/* Workload */}

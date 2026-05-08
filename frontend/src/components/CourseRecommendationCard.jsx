@@ -8,7 +8,7 @@ const PROF_COLORS = [
 ];
 
 const AXES = ["Learning Style", "Goals", "Grades", "Personality", "Prof Match"];
-const AXIS_KEYS = ["learning_style", "goals", "grades", "personality", "professor_match"];
+const AXIS_KEYS = ["learning_style", "goals", "grades", "personality", "professor_quality"];
 
 function RadarChart({ professors }) {
   const canvasRef = useRef(null);

@@ -3,71 +3,38 @@ import ProfileForm from "./components/ProfileForm";
 import RecommendationCard from "./components/CourseRecommendationCard";
 import RecommendationTable from "./components/RecommendationTable";
 
-const API_URL = "https://YOUR_API_URL/recommend"; // swap this with Person 2's endpoint
+const API_URL = "https://27lovpxexhhw3wq3i2kfp4bxae0jxyhr.lambda-url.us-west-2.on.aws/"; // swap this with Person 2's endpoint
 
 export default function App() {
   const [page, setPage] = useState("form"); // "form" | "loading" | "results"
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
 
-//   const handleSubmit = async (formData) => {
-//     setPage("loading");
-//     setError(null);
-
-//     try {
-//       const res = await fetch(API_URL, {
-//         method: "POST",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify(formData),
-//       });
-
-//       const data = await res.json();
-
-//       if (!data.success) {
-//         throw new Error(data.error || "Something went wrong");
-//       }
-
-//       setResults(data);
-//       setPage("results");
-//     } catch (err) {
-//       setError(err.message);
-//       setPage("form");
-//     }
-//   };
-
-const handleSubmit = async (formData) => {
+  const handleSubmit = async (formData) => {
     setPage("loading");
-    setTimeout(() => {
-      setResults({
-        profile_summary: "You're a 3rd year CS student who prefers project-based learning and aims for ML internships.",
-        recommendations: [
-          {
-            course: "CPSC 340",
-            title: "Machine Learning",
-            reason: "Matches your ML interest and project-based style.",
-            workload: "heavy",
-            overall_match: 88,
-            skills_gained: ["ML", "Python", "Statistics"],
-            warning: "Math intensive",
-            professors: [
-              {
-                name: "Dr. Smith",
-                professor_style: "Structured, detailed feedback",
-                student_experience: "Strong practical assignments",
-                match_scores: { learning_style: 90, goals: 95, grades: 80, personality: 75, professor_match: 88 }
-              },
-              {
-                name: "Dr. Lee",
-                professor_style: "Fast paced, research oriented",
-                student_experience: "Better for grad school",
-                match_scores: { learning_style: 70, goals: 85, grades: 90, personality: 60, professor_match: 72 }
-              }
-            ]
-          }
-        ]
-      });
+    setError(null);
+
+    try {
+      const res = await fetch(API_URL);
+      const text = await res.text();
+      console.log("raw response:", text);
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error(`Server error: ${text}`);
+      }
+      if (!res.ok || data.success === false) {
+        throw new Error(data.error || `Server returned ${res.status}`);
+      }
+      const recommendations = data.Recommendations ?? data.recommendations ?? [];
+      setResults({ ...data, recommendations });
       setPage("results");
-    }, 1500);
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
+      setPage("form");
+    }
   };
 
   const handleBack = () => {

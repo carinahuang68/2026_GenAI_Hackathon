@@ -115,12 +115,21 @@ def extract_json(text):
 # ============================================
 # Lambda Handler
 # ============================================
+CORS_HEADERS = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+}
+
 def lambda_handler(event, context):
+    if event.get("requestContext", {}).get("http", {}).get("method") == "OPTIONS":
+        return {"statusCode": 200, "headers": CORS_HEADERS, "body": ""}
+
     try:
         logger.info("Processing recommendation request")
-        
+
         # 1. Parse Input Body (Mapping to Hackathon Doc Schema)
-        body = json.loads(event.get("body", "{}"))
+        body = json.loads(event.get("body") or "{}")
         
         student_profile = {
             "major": body.get("major"),
@@ -163,10 +172,7 @@ def lambda_handler(event, context):
         # 4. Final Response (Aligned with success: true schema)
         return {
             "statusCode": 200,
-            "headers": {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
-            },
+            "headers": {**CORS_HEADERS, "Content-Type": "application/json"},
             "body": json.dumps({
                 "success": True,
                 "profile_summary": result.get("profile_summary", ""),
@@ -178,10 +184,7 @@ def lambda_handler(event, context):
         logger.error(f"Execution failed: {str(e)}")
         return {
             "statusCode": 500,
-            "headers": {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
-            },
+            "headers": {**CORS_HEADERS, "Content-Type": "application/json"},
             "body": json.dumps({
                 "success": False,
                 "error": "Internal Server Error"
